@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wind-vision"
+version = "0.1.0"
+description = "Wind speed prediction from webcam imagery using CNNs"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml",
+    "torch",
+    "torchvision",
+    "playwright",
+    "opencv-python-headless",
+    "easyocr",
+    "numpy",
+    "Pillow",
+]
+
+[project.scripts]
+wind-vision = "wind_vision.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["wind_vision*"]

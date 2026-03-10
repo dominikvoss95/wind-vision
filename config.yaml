@@ -1,0 +1,16 @@
+webcam:
+  base_host: "https://www.addicted-sports.com"
+  cam_id: "malcesinenord"
+  page_url_template: "https://www.addicted-sports.com/webcam/gardasee/{cam_id}/#/{y}/{m}/{d}/{hm}"
+  years_back: 5
+  daily_at: "09:30"
+
+paths:
+  raw_image_dir: "data/raw/webcam"
+  raw_weather_dir: "data/raw/measurements"
+
+training:
+  batch_size: 16
+  learning_rate: 0.001
+  epochs: 15
+  model_save_path: "models/wind_model.pth"

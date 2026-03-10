@@ -1,0 +1,9 @@
+pyyaml
+torch
+torchvision
+numpy
+Pillow
+opencv-python-headless
+easyocr
+playwright
+pytest
