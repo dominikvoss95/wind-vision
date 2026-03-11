@@ -32,6 +32,8 @@ def main():
     explain_parser = sub.add_parser("explain", help="visualize model focus (Grad-CAM)")
     explain_parser.add_argument("image_path", help="path to image")
 
+    sub.add_parser("serve", help="start the FastAPI production server")
+
     args = parser.parse_args()
 
     if args.cmd == "fetch":
@@ -54,6 +56,10 @@ def main():
         print(f"\nPredicted Wind Speed: {prediction:.1f} kts\n")
     elif args.cmd == "explain":
         run_explanation(args.image_path)
+    elif args.cmd == "serve":
+        import uvicorn
+        from wind_vision.api.server import app
+        uvicorn.run(app, host="0.0.0.0", port=8000)
     else:
         parser.print_help()
 

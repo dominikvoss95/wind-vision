@@ -11,6 +11,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import models, transforms
+import mlflow
+import mlflow.pytorch
 
 from wind_vision.models.dataset import WindDataset
 
@@ -63,6 +65,18 @@ def train_model(
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
+    # --- MLOps: MLflow Tracking ---
+    mlflow.set_experiment("wind-vision")
+    
+    # Start MLflow run
+    run = mlflow.start_run()
+    mlflow.log_params({
+        "lr": lr,
+        "batch_size": batch_size,
+        "epochs": num_epochs,
+        "model_type": "resnet18"
+    })
+
     train_losses, val_losses = [], []
 
     for epoch in range(1, num_epochs + 1):
@@ -92,6 +106,11 @@ def train_model(
             val_loss /= val_n
             val_losses.append(val_loss)
             val_msg = f" | val={val_loss:.4f}"
+
+        # Log to MLflow
+        mlflow.log_metric("train_loss", train_loss, step=epoch)
+        if val_loader:
+            mlflow.log_metric("val_loss", val_loss, step=epoch)
 
         logger.info("Epoch %d/%d  train=%.4f%s", epoch, num_epochs, train_loss, val_msg)
 
@@ -126,9 +145,11 @@ def train_model(
     # Link latest
     torch.save(model.state_dict(), "models/wind_model.pth")
     
-    logger.info("Experiment %s finished.", exp_id)
-    logger.info("Latest model updated → models/wind_model.pth")
     logger.info("Full history saved to → %s", exp_dir)
+    
+    # Log model to MLflow
+    mlflow.pytorch.log_model(model, "model")
+    mlflow.end_run()
 
 
 if __name__ == "__main__":

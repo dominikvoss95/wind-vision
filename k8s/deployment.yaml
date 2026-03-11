@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wind-vision-api
+  labels:
+    app: wind-vision
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wind-vision
+  template:
+    metadata:
+      labels:
+        app: wind-vision
+    spec:
+      containers:
+      - name: api
+        image: wind-vision-api:v1
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        env:
+        - name: MODEL_PATH
+          value: "/app/models/wind_model.pth"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wind-vision-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: wind-vision
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
