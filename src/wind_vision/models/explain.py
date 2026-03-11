@@ -66,7 +66,8 @@ def run_explanation(image_path: str, model_path: str = "models/wind_model.pth"):
     crop_img.paste(mask, (0, 0))
 
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize(224),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
     ])
@@ -79,8 +80,13 @@ def run_explanation(image_path: str, model_path: str = "models/wind_model.pth"):
     heatmap = cam_engine.generate_heatmap(input_tensor)
 
     # Create visualization
-    # Convert PIL crop to CV2 BGR
-    vis_img = np.array(crop_img.resize((224, 224)))
+    # We need to replicate the exact same CenterCrop for the base image
+    base_transform = transforms.Compose([
+        transforms.Resize(224),
+        transforms.CenterCrop(224),
+    ])
+    vis_img_pil = base_transform(crop_img)
+    vis_img = np.array(vis_img_pil)
     vis_img = cv2.cvtColor(vis_img, cv2.COLOR_RGB2BGR)
     
     # Overlay heatmap

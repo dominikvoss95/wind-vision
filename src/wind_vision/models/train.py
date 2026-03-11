@@ -1,6 +1,9 @@
 """Training loop for the wind speed regression model."""
 
 import logging
+import json
+import time
+from datetime import datetime
 from pathlib import Path
 
 import torch
@@ -36,7 +39,8 @@ def train_model(
     logger.info("Device: %s", device)
 
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize(224),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
     ])
@@ -59,6 +63,8 @@ def train_model(
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
+    train_losses, val_losses = [], []
+
     for epoch in range(1, num_epochs + 1):
         # --- train ---
         model.train()
@@ -72,6 +78,7 @@ def train_model(
             train_loss += loss.item() * images.size(0)
 
         train_loss /= train_n
+        train_losses.append(train_loss)
 
         # --- validate ---
         val_msg = ""
@@ -83,15 +90,45 @@ def train_model(
                     images, labels = images.to(device), labels.to(device)
                     val_loss += criterion(model(images), labels).item() * images.size(0)
             val_loss /= val_n
+            val_losses.append(val_loss)
             val_msg = f" | val={val_loss:.4f}"
 
         logger.info("Epoch %d/%d  train=%.4f%s", epoch, num_epochs, train_loss, val_msg)
 
-    # persist weights
-    out = Path("models")
-    out.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), out / "wind_model.pth")
-    logger.info("Saved model → %s", out / "wind_model.pth")
+    # --- Export Metadata & Model Versioning (MLOps Senior Level) ---
+    exp_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    exp_dir = Path("experiments") / exp_id
+    exp_dir.mkdir(parents=True, exist_ok=True)
+
+    metadata = {
+        "experiment_id": exp_id,
+        "params": {
+            "epochs": num_epochs,
+            "batch_size": batch_size,
+            "lr": lr,
+            "model": "resnet18"
+        },
+        "metrics": {
+            "final_train_loss": train_losses[-1] if train_losses else None,
+            "final_val_loss": val_losses[-1] if val_losses else None
+        },
+        "history": {
+            "train": train_losses,
+            "val": val_losses
+        }
+    }
+
+    # Save timestamped version
+    torch.save(model.state_dict(), exp_dir / "model.pth")
+    with open(exp_dir / "metadata.json", "w") as f:
+        json.dump(metadata, f, indent=4)
+
+    # Link latest
+    torch.save(model.state_dict(), "models/wind_model.pth")
+    
+    logger.info("Experiment %s finished.", exp_id)
+    logger.info("Latest model updated → models/wind_model.pth")
+    logger.info("Full history saved to → %s", exp_dir)
 
 
 if __name__ == "__main__":

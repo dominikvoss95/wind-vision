@@ -35,7 +35,8 @@ def predict_wind(image_path: str, model_path: str = "models/wind_model.pth"):
     img.paste(mask, (0, 0))
 
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize(224),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
     ])

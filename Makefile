@@ -1,6 +1,6 @@
 # Wind-Vision Makefile
 
-.PHONY: setup fetch extract train eval predict test clean
+.PHONY: setup fetch extract train eval predict serve test clean
 
 setup:
 	python -m venv .venv
@@ -21,6 +21,9 @@ eval:
 
 predict:
 	@python -m wind_vision.cli predict $(IMG)
+
+serve:
+	uvicorn src.wind_vision.api.server:app --reload
 
 test:
 	pytest tests/ -v
